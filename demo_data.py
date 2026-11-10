@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
+from decimal import Decimal
+
 from .chains import explorer_address, explorer_tx, node_id
-from .money import format_usd
+from .money import format_amount
+from .narrate import summarize
 
 # Relative minutes keep the scrubber inside "now" whenever the fixture is built.
 _ROWS: list[dict[str, Any]] = [
@@ -50,7 +53,7 @@ def build_demo(now: float) -> dict[str, Any]:
             "id": f"demo:{index}",
             "chain": row["chain"],
             "token": row["token"],
-            "amount": f"{row['amount']}",
+            "amount": format_amount(Decimal(str(row["amount"]))),
             "amount_value": float(row["amount"]),
             "usd": float(row["usd"]),
             "ts": ts,
@@ -84,18 +87,14 @@ def build_demo(now: float) -> dict[str, Any]:
                 "explorer": explorer_address(row["chain"], address),
             })
     flows.sort(key=lambda item: item["ts"], reverse=True)
-    largest_in = max((item for item in flows if item["direction"] == "in"), key=lambda item: item["usd"])
-    largest_out = max((item for item in flows if item["direction"] == "out"), key=lambda item: item["usd"])
-    inbound = sum(item["usd"] for item in flows if item["direction"] == "in")
-    outbound = sum(item["usd"] for item in flows if item["direction"] == "out")
-    text = (
-        "DEMO FIXTURE, not live chain data. "
-        f"Largest inflow in the fixture window was {largest_in['amount']} {largest_in['token']} "
-        f"({format_usd(largest_in['usd'])}) from {largest_in['src_label']} to {largest_in['dst_label']} on {largest_in['chain']}. "
-        f"Largest outflow was {largest_out['amount']} {largest_out['token']} ({format_usd(largest_out['usd'])}) "
-        f"to {largest_out['dst_label']}. "
-        f"Watched accounts show {format_usd(inbound)} in and {format_usd(outbound)} out across {len(flows)} sample transfers."
+    summary = summarize(
+        flows,
+        demo_watches(),
+        requested_hours=24,
+        warnings=["Showing the built-in demo fixture. These transfers were not read from a chain."],
     )
+    summary["text"] = "DEMO FIXTURE, not live chain data. " + summary["text"]
+    summary["label"] = "DEMO FIXTURE"
     return {
         "ok": True,
         "demo": True,
@@ -107,14 +106,5 @@ def build_demo(now: float) -> dict[str, Any]:
         "watches": demo_watches(),
         "flows": flows,
         "nodes": list(nodes.values()),
-        "summary": {
-            "text": text,
-            "largest_inflow": largest_in,
-            "largest_outflow": largest_out,
-            "in_usd": round(inbound, 2),
-            "out_usd": round(outbound, 2),
-            "count": len(flows),
-            "complete": True,
-            "label": "DEMO FIXTURE",
-        },
+        "summary": summary,
     }

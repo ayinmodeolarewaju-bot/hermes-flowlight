@@ -21,19 +21,41 @@ def _money(flow: dict[str, Any]) -> str:
     return f"{base} ({usd})" if usd else base
 
 
+def _rank_key(row: dict[str, Any]) -> tuple[float, float]:
+    """Priced transfers rank by USD. Unpriced ones rank by token amount, below any priced transfer."""
+    amount = float(row.get("amount_value") or 0)
+    usd = row.get("usd")
+    if usd is None:
+        return (0.0, amount)
+    return (1.0, float(usd))
+
+
+def largest_by_direction(flows: list[dict[str, Any]], direction: str) -> dict[str, Any] | None:
+    """Largest transfer of one direction.
+
+    Direction is assigned once, before this runs: ``in`` means the destination
+    is a watched address and the source is not. ``out`` is the reverse.
+    A transfer between two watched addresses is ``internal`` and is neither.
+    """
+    rows = [flow for flow in flows if flow.get("direction") == direction]
+    if not rows:
+        return None
+    return max(rows, key=_rank_key)
+
+
+def inflow_headline(largest_in: dict[str, Any] | None, count: int) -> str:
+    """The one sentence the pane, the summary tool, and the CLI all show."""
+    if not largest_in:
+        return f"No inflow in the scanned window. {count} transfers."
+    return f"Largest inflow {_money(largest_in)} · {count} transfers in the scanned window."
+
+
 def summarize(flows: list[dict[str, Any]], watches: list[dict[str, Any]], *, requested_hours: int, warnings: list[str]) -> dict[str, Any]:
+    largest_in = largest_by_direction(flows, "in")
+    largest_out = largest_by_direction(flows, "out")
     inbound = [flow for flow in flows if flow.get("direction") == "in"]
     outbound = [flow for flow in flows if flow.get("direction") == "out"]
-
-    def rank(rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-        priced = [row for row in rows if row.get("usd") is not None]
-        pool = priced or rows
-        if not pool:
-            return None
-        return max(pool, key=lambda row: float(row.get("usd") if row.get("usd") is not None else row.get("amount_value") or 0))
-
-    largest_in = rank(inbound)
-    largest_out = rank(outbound)
+    head = inflow_headline(largest_in, len(flows))
     in_usd = sum(float(row["usd"]) for row in inbound if row.get("usd") is not None)
     out_usd = sum(float(row["usd"]) for row in outbound if row.get("usd") is not None)
     stamps = [int(row["ts"]) for row in flows if row.get("ts")]
@@ -58,14 +80,13 @@ def summarize(flows: list[dict[str, Any]], watches: list[dict[str, Any]], *, req
                 "public endpoints return the recent slice, and busy addresses hit the read cap first."
             )
         lines.append(coverage)
+    lines.append(head)
     if largest_in:
         lines.append(
-            f"Largest inflow was {_money(largest_in)} from {_party(largest_in, 'src')} "
+            f"That inflow moved from {_party(largest_in, 'src')} "
             f"to {_party(largest_in, 'dst')} on {largest_in['chain']} at {format_time(largest_in.get('ts'))}."
         )
         lines.append(f"Inflow explorer: {largest_in.get('explorer')}")
-    else:
-        lines.append("No inflow in the scanned window.")
     if largest_out:
         lines.append(
             f"Largest outflow was {_money(largest_out)} from {_party(largest_out, 'src')} "
@@ -89,6 +110,7 @@ def summarize(flows: list[dict[str, Any]], watches: list[dict[str, Any]], *, req
         lines.append("Notes: " + " ".join(warnings))
     return {
         "text": " ".join(lines),
+        "headline": head,
         "largest_inflow": largest_in,
         "largest_outflow": largest_out,
         "in_usd": round(in_usd, 2),

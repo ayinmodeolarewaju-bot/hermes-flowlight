@@ -69,7 +69,7 @@ def test_blockscout_and_log_normalization():
     }]
     flows = providers.flows_from_blockscout("base", BUSY, items, prices)
     assert len(flows) == 2
-    assert flows[0]["amount"] == "18420"
+    assert flows[0]["amount"] == "18,420"
     assert flows[0]["usd"] == 18420
     assert flows[0]["src_label"] == "alice.eth"
     assert flows[0]["explorer"].startswith("https://base.blockscout.com/tx/")
@@ -133,6 +133,69 @@ def test_near_signed_delta_direction():
     assert native["src"] == "wrap.near"
     assert native["dst"] == "purefile1686.near"
     assert native["amount"] == "2"
+
+
+def test_shared_inflow_is_toward_the_watched_address_and_matches_everywhere():
+    from decimal import Decimal
+
+    from flowlight_plugin.money import format_amount
+    import flowlight_plugin.service as service_mod
+
+    assert format_amount(Decimal("152156.87")) == "152,156.87"
+    assert format_amount(Decimal("18420")) == "18,420"
+    hub = "0x" + "aa" * 20
+    other = "0x" + "bb" * 20
+    second = "0x" + "cc" * 20
+    watches = [
+        {"chain": "base", "address": hub, "label": "Hub"},
+        {"chain": "base", "address": second, "label": "Second"},
+    ]
+    flows = [
+        {
+            "id": "out", "chain": "base", "token": "USDC",
+            "amount": format_amount(Decimal("9000000")), "amount_value": 9_000_000, "usd": 9_000_000,
+            "ts": 3, "src": hub, "dst": other, "explorer": "https://example.test/out",
+            "src_label": "Hub", "dst_label": "exit",
+        },
+        {
+            "id": "internal", "chain": "base", "token": "USDC",
+            "amount": format_amount(Decimal("8000000")), "amount_value": 8_000_000, "usd": 8_000_000,
+            "ts": 4, "src": hub, "dst": second, "explorer": "https://example.test/internal",
+            "src_label": "Hub", "dst_label": "Second",
+        },
+        {
+            "id": "small-in", "chain": "base", "token": "USDC",
+            "amount": format_amount(Decimal("1000")), "amount_value": 1000, "usd": 1000,
+            "ts": 1, "src": other, "dst": hub, "explorer": "https://example.test/small",
+            "src_label": "desk", "dst_label": "Hub",
+        },
+        {
+            "id": "big-in", "chain": "base", "token": "USDC",
+            "amount": format_amount(Decimal("152156.87")), "amount_value": 152156.87, "usd": 152156.87,
+            "ts": 2, "src": other, "dst": hub, "explorer": "https://example.test/big",
+            "src_label": "whale", "dst_label": "Hub",
+        },
+    ]
+    annotated = service_mod._annotate(flows, watches)
+    assert next(row for row in annotated if row["id"] == "big-in")["direction"] == "in"
+    assert next(row for row in annotated if row["id"] == "out")["direction"] == "out"
+    assert next(row for row in annotated if row["id"] == "internal")["direction"] == "internal"
+    summary = narrate.summarize(annotated, watches, requested_hours=24, warnings=[])
+    assert summary["largest_inflow"]["id"] == "big-in"
+    assert summary["largest_inflow"]["amount"] == "152,156.87"
+    from flowlight_plugin.money import format_usd
+    assert summary["headline"] == (
+        "Largest inflow 152,156.87 USDC (" + format_usd(152156.87) + ") · 4 transfers in the scanned window."
+    )
+    assert summary["headline"] in summary["text"]
+    assert "9,000,000" not in summary["headline"]
+    assert "8,000,000" not in summary["headline"]
+    box = deps(fetcher=lambda _watches, _deps: (annotated, []))
+    for watch in watches:
+        box.store.upsert({**watch, "added_at": 1})
+    picture = service.graph(box)
+    assert picture["summary"]["headline"] == summary["headline"]
+    assert picture["summary"]["largest_inflow"]["amount"] == picture["summary"]["headline"].split(" ")[2]
 
 
 def test_summary_picks_largest_and_admits_a_short_window():
@@ -279,6 +342,8 @@ def test_frontend_bundle_contains_engine_and_avoids_desktop_pitfalls():
     desktop = (ROOT / "desktop" / "plugin.js").read_text(encoding="utf-8")
     dashboard = (ROOT / "dashboard" / "dist" / "index.js").read_text(encoding="utf-8")
     engine = (ROOT / "frontend" / "engine.js").read_text(encoding="utf-8")
+    assert "summary.headline" in engine
+    assert "top:74px" not in engine
     assert "function mountFlowlight" in desktop
     assert "function mountFlowlight" in dashboard
     assert "FLOWLIGHT" in engine

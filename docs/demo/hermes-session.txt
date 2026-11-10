@@ -1,20 +1,5 @@
 $ hermes flowlight watch purefile1686.near and 0xe7030be388b8e247abe0c9fa876673e83fbcbd3c on Base
 
-Watching purefile1686.near on near, 0xe7030be388b8e247abe0c9fa876673e83fbcbd3c on base.
-Watched purefile1686.near on near, 0xe703…bd3c on base.
-The scanned window runs 2026-11-09 23:57 UTC to 2026-11-10 00:06 UTC (90 transfers).
-That is shorter than the requested 24h lookback: public endpoints return the recent slice,
-and busy addresses hit the read cap first.
-Largest inflow was 152156.87 USDC ($152.1k) from 0x7068…1921 to 0xe703…bd3c on base
-at 2026-11-10 00:02 UTC.
-Inflow explorer: https://base.blockscout.com/tx/0x825b841a6235644645ddcfe916ef2d721eff1907bfac5b471f885bb81707d79b
-Largest outflow was 152156.87 USDC ($152.1k) from 0xe703…bd3c to 0x7068…1921 on base
-at 2026-11-10 00:02 UTC.
-Priced volume: $3.57M in, $3.49M out, net $77.7k.
-No transfers in this window for purefile1686.near.
-Notes: near: purefile1686.near has no fungible or native transfers in the public recent history.
-base: Blockscout was unavailable. Fell back to public RPC logs for major tokens.
-
-$ hermes flowlight serve
-Flowlight picture at http://127.0.0.1:8787/
-Read-only. This page does not sign or send transactions.
+flowlight_watch
+Largest inflow 150,484.66 USDC ($150.4k) · 90 transfers in the scanned window.
+That inflow is the largest transfer into a watched address.

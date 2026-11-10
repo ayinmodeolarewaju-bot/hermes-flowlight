@@ -6,19 +6,19 @@ var FLOWLIGHT_CSS = [
   ".fl-stage{position:absolute;inset:0}",
   ".fl-canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}",
   ".fl-canvas.dragging{cursor:grabbing}",
-  ".fl-top{position:absolute;left:14px;right:14px;top:12px;display:flex;gap:12px;align-items:flex-start;",
-  "justify-content:space-between;pointer-events:none;z-index:2}",
-  ".fl-brand{pointer-events:auto;display:flex;flex-direction:column;gap:4px}",
+  ".fl-top{position:absolute;left:14px;right:14px;top:12px;display:flex;gap:16px;align-items:flex-start;",
+  "justify-content:space-between;pointer-events:none;z-index:4}",
+  ".fl-brand{pointer-events:auto;display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;max-width:calc(100% - 168px)}",
   ".fl-word{font-family:var(--fl-display,Syne,Outfit,sans-serif);font-weight:750;letter-spacing:.22em;",
   "font-size:13px;margin:0}",
-  ".fl-sub{margin:0;font-size:12px;color:rgba(231,238,252,.62);max-width:460px;line-height:1.35}",
+  ".fl-sub{margin:0;font-size:13px;line-height:1.35;color:rgba(231,238,252,.86);max-width:100%}",
   ".fl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}",
   ".fl-badge{pointer-events:auto;border:1px solid rgba(255,255,255,.16);border-radius:999px;",
   "padding:4px 9px;font-size:10px;letter-spacing:.16em;text-transform:uppercase}",
   ".fl-badge.live{color:#9dffe2;border-color:rgba(120,255,214,.45);box-shadow:0 0 18px rgba(80,255,200,.18)}",
   ".fl-badge.demo{color:#ffd27a;border-color:rgba(255,196,90,.55);background:rgba(255,180,60,.08)}",
   ".fl-stats{pointer-events:none;text-align:right;font-variant-numeric:tabular-nums;font-size:12px;",
-  "color:rgba(231,238,252,.78);line-height:1.45;white-space:pre-line}",
+  "color:rgba(231,238,252,.78);line-height:1.45;white-space:pre-line;flex:0 0 148px}",
   ".fl-bottom{position:absolute;left:14px;right:14px;bottom:12px;display:flex;gap:10px;align-items:center;",
   "z-index:2;padding:8px 10px;border-radius:14px;background:rgba(8,8,16,.55);",
   "border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(10px)}",
@@ -28,7 +28,7 @@ var FLOWLIGHT_CSS = [
   ".fl-btn:disabled{opacity:.4;cursor:default}",
   ".fl-range{flex:1;accent-color:#8fd4ff;min-width:80px}",
   ".fl-time{font-size:11px;color:rgba(231,238,252,.66);white-space:nowrap;font-variant-numeric:tabular-nums}",
-  ".fl-panel{position:absolute;top:74px;right:14px;width:min(300px,calc(100% - 28px));max-height:calc(100% - 150px);",
+  ".fl-panel{position:absolute;top:128px;right:14px;width:min(300px,calc(100% - 28px));max-height:calc(100% - 180px);",
   "overflow:auto;z-index:3;padding:14px;border-radius:16px;background:rgba(10,10,18,.82);",
   "border:1px solid rgba(180,210,255,.18);box-shadow:0 18px 50px rgba(0,0,0,.35);backdrop-filter:blur(16px)}",
   ".fl-panel h3{margin:0 0 6px;font-size:14px;font-weight:640}",
@@ -36,15 +36,16 @@ var FLOWLIGHT_CSS = [
   ".fl-k{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(231,238,252,.46)}",
   ".fl-panel a{color:#9fd4ff}",
   ".fl-x{position:absolute;top:8px;right:8px}",
-  ".fl-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}",
+  ".fl-empty{position:absolute;left:0;right:0;top:140px;bottom:76px;display:flex;align-items:center;justify-content:center;z-index:2;pointer-events:none}",
   ".fl-card{pointer-events:auto;max-width:420px;padding:22px;border-radius:18px;background:rgba(8,8,16,.62);",
   "border:1px solid rgba(255,255,255,.1);text-align:left}",
   ".fl-card h2{margin:8px 0;font-family:var(--fl-display,Syne,sans-serif);font-size:28px;letter-spacing:.08em}",
-  ".fl-legend{position:absolute;left:14px;top:74px;display:flex;flex-direction:column;gap:4px;z-index:2;pointer-events:none}",
-  ".fl-key{display:flex;gap:6px;align-items:center;font-size:11px;color:rgba(231,238,252,.72)}",
+  ".fl-legend{position:static;display:flex;flex-direction:row;flex-wrap:wrap;gap:6px 12px;z-index:2;pointer-events:none}",
+  ".fl-key{display:flex;gap:6px;align-items:center;font-size:11px;color:rgba(231,238,252,.8);",
+  "background:rgba(8,8,16,.55);border:1px solid rgba(255,255,255,.08);border-radius:999px;padding:3px 8px}",
   ".fl-dot{width:8px;height:8px;border-radius:99px;box-shadow:0 0 8px currentColor}",
-  ".fl-warn{position:absolute;left:14px;right:14px;bottom:62px;z-index:2;font-size:11px;",
-  "color:rgba(255,214,150,.8);pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+  ".fl-warn{position:static;z-index:2;font-size:11px;line-height:1.35;color:rgba(255,214,150,.86);pointer-events:none;",
+  "display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}",
   ".fl-tip{position:absolute;z-index:4;pointer-events:none;padding:6px 8px;border-radius:8px;font-size:11px;",
   "background:rgba(6,6,12,.9);border:1px solid rgba(255,255,255,.12);transform:translate(12px,12px);max-width:240px}"
 ].join("");
@@ -164,14 +165,16 @@ function mountFlowlight(root, options) {
   row.appendChild(badge);
   row.appendChild(demoBtn);
   row.appendChild(liveBtn);
+  var legend = flEl("div", "fl-legend");
+  var warn = flEl("div", "fl-warn");
   brand.appendChild(word);
   brand.appendChild(row);
   brand.appendChild(sub);
+  brand.appendChild(legend);
+  brand.appendChild(warn);
   var stats = flEl("div", "fl-stats");
   top.appendChild(brand);
   top.appendChild(stats);
-  var legend = flEl("div", "fl-legend");
-  var warn = flEl("div", "fl-warn");
   var empty = flEl("div", "fl-empty");
   var bottom = flEl("div", "fl-bottom");
   var play = flEl("button", "fl-btn");
@@ -202,8 +205,6 @@ function mountFlowlight(root, options) {
   tip.hidden = true;
   root.appendChild(stage);
   root.appendChild(top);
-  root.appendChild(legend);
-  root.appendChild(warn);
   root.appendChild(empty);
   root.appendChild(bottom);
   root.appendChild(panel);
@@ -345,6 +346,7 @@ function mountFlowlight(root, options) {
       row.usd += Number(flow.usd || 0);
       row.amount += Number(flow.amount_value || flow.amount || 0);
       if (!row.latest || flow.ts >= row.latest.ts) row.latest = flow;
+      if (!row.biggest || Number(flow.usd || 0) > Number(row.biggest.usd || 0)) row.biggest = flow;
       if (row.samples.length < 4) row.samples.push(flow);
     });
     return Object.keys(map).map(function (key) { return map[key]; });
@@ -422,13 +424,28 @@ function mountFlowlight(root, options) {
       }
     }
     list.forEach(function (node) {
-      node.tx = Math.max(54, Math.min(width - right - 20, node.tx));
-      node.ty = Math.max(86, Math.min(height - 78, node.ty));
+      var topPad = Math.max(128, (top.offsetHeight || 120) + 22);
+      node.tx = Math.max(54, Math.min(width - right - 28, node.tx));
+      node.ty = Math.max(topPad, Math.min(height - 84, node.ty));
       if (node.x === undefined) {
         node.x = node.tx;
         node.y = node.ty;
       }
     });
+  }
+
+  function arcKey(flow) {
+    return flow.chain + "|" + flow.chain + ":" + flow.src + "|" + flow.chain + ":" + flow.dst + "|" + flow.token;
+  }
+
+  function arcForInflow(flow) {
+    if (!flow) return null;
+    var key = arcKey(flow);
+    var arcs = aggregate(visibleFlows());
+    for (var i = 0; i < arcs.length; i++) {
+      if (arcs[i].id === key) return arcs[i];
+    }
+    return null;
   }
 
   function paintChrome() {
@@ -455,11 +472,10 @@ function mountFlowlight(root, options) {
     } else if (!(data.watches || []).length) {
       sub.textContent = "No watches yet. Ask Hermes to watch an address, or load the demo fixture.";
     } else {
-      var big = summary.largest_inflow;
-      sub.textContent = big
-        ? "Largest inflow " + flMoney(big.amount, big.token, big.usd) + " · " + (summary.count || flows.length) + " transfers in the scanned window."
-        : "Watching public transfers. No inflow in this window.";
+      sub.textContent = summary.headline || "Watching public transfers.";
     }
+    panel.style.top = ((top.offsetHeight || 120) + 16) + "px";
+    empty.style.top = ((top.offsetHeight || 120) + 8) + "px";
     warn.textContent = state.error || ((data && data.warnings && data.warnings[0]) || "");
     var tokens = {};
     flows.forEach(function (flow) { tokens[flow.token] = flTokenColor(flow.token); });
@@ -495,10 +511,9 @@ function mountFlowlight(root, options) {
     timeLabel.textContent = flClock(at).slice(11, 16);
     if (state.live) range.value = "1000";
     if (options.autoselect === "largest" && !state.picked) {
-      var arcs = aggregate(visibleFlows());
-      arcs.sort(function (a, b) { return (b.usd || b.amount) - (a.usd || a.amount); });
-      if (arcs[0]) {
-        state.selected = { type: "arc", id: arcs[0].id };
+      var inflowArc = arcForInflow(summary.largest_inflow);
+      if (inflowArc) {
+        state.selected = { type: "arc", id: inflowArc.id };
         state.picked = true;
       }
     }
@@ -544,9 +559,15 @@ function mountFlowlight(root, options) {
       }
       return;
     }
-    var latest = arc.latest || {};
+    var latest = arc.biggest || arc.latest || {};
+    var inflow = (state.data && state.data.summary && state.data.summary.largest_inflow) || null;
+    var sameInflow = inflow && latest.id && latest.id === inflow.id;
     var heading = flEl("h3");
-    heading.textContent = flMoney(latest.amount || arc.amount.toFixed(2), arc.token, latest.usd);
+    if (sameInflow && state.data.summary.headline) {
+      heading.textContent = state.data.summary.headline.split(" · ")[0];
+    } else {
+      heading.textContent = "This transfer " + flMoney(latest.amount || "", arc.token, latest.usd);
+    }
     var dir = flEl("p");
     dir.textContent = arc.count + " transfer" + (arc.count === 1 ? "" : "s") + " on this route · " + (flUsd(arc.usd) || arc.chain);
     var route = flEl("p");
@@ -646,6 +667,7 @@ function mountFlowlight(root, options) {
     if (!moved) {
       var found = hit(worldFromEvent(event));
       state.selected = found ? { type: found.type, id: found.id } : null;
+      tip.hidden = true;
       renderPanel();
     }
     state.drag = null;
@@ -715,6 +737,7 @@ function mountFlowlight(root, options) {
     g.translate(state.cam.x, state.cam.y);
     g.scale(state.cam.k, state.cam.k);
     g.lineCap = "round";
+    g._labels = [];
     arcs.forEach(function (arc) {
       var a = state.nodes[arc.from];
       var b = state.nodes[arc.to];
@@ -775,12 +798,26 @@ function mountFlowlight(root, options) {
       var label = node.label || node.address || "";
       g.font = (node.watched ? "600 12px " : "11px ") + "Outfit, ui-sans-serif, sans-serif";
       g.textAlign = "center";
-      var tw = g.measureText(label).width;
-      g.fillStyle = "rgba(6,6,12,0.72)";
-      roundRect(g, node.x - tw / 2 - 6, node.y + radius + 8, tw + 12, 16, 8);
+      var tw = Math.min(g.measureText(label).width, 148);
+      if (g.measureText(label).width > 148) label = label.slice(0, 16) + "…";
+      tw = g.measureText(label).width;
+      var box = { x: node.x - tw / 2 - 6, y: node.y + radius + 8, w: tw + 12, h: 16, watched: !!node.watched };
+      function overlaps(other) {
+        return box.x < other.x + other.w && box.x + box.w > other.x && box.y < other.y + other.h && box.y + box.h > other.y;
+      }
+      if ((g._labels || []).some(overlaps)) {
+        box.y += 18;
+      }
+      if ((g._labels || []).some(overlaps)) {
+        if (!node.watched) return;
+        box.y -= 18;
+      }
+      g._labels.push(box);
+      g.fillStyle = "rgba(6,6,12,0.78)";
+      roundRect(g, box.x, box.y, box.w, box.h, 8);
       g.fill();
-      g.fillStyle = "rgba(236,242,255,0.92)";
-      g.fillText(label, node.x, node.y + radius + 20);
+      g.fillStyle = "rgba(236,242,255,0.94)";
+      g.fillText(label, node.x, box.y + 12);
     });
     g.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -812,7 +849,47 @@ function mountFlowlight(root, options) {
     if (observer) observer.disconnect();
     window.removeEventListener("mouseup", onMouseUp);
   }
-  return { destroy: destroy, reload: load };
+  function inflowPoint() {
+    var flow = state.data && state.data.summary && state.data.summary.largest_inflow;
+    if (!flow) return null;
+    var a = state.nodes[flow.chain + ":" + flow.src];
+    var b = state.nodes[flow.chain + ":" + flow.dst];
+    if (!a || !b || a.x === undefined) return null;
+    var key = arcKey(flow);
+    var ctrl = control(a, b, (flHash(key) - 0.5) * 110);
+    var point = quad(a, ctrl, b, 0.55);
+    var css = canvas._css || { w: canvas.clientWidth, h: canvas.clientHeight };
+    var rect = canvas.getBoundingClientRect();
+    var sx = point.x * state.cam.k + state.cam.x;
+    var sy = point.y * state.cam.k + state.cam.y;
+    return {
+      x: rect.left + (sx / css.w) * rect.width,
+      y: rect.top + (sy / css.h) * rect.height
+    };
+  }
+
+  return {
+    destroy: destroy,
+    reload: load,
+    scrub: function (fraction) {
+      state.live = false;
+      state.playing = false;
+      play.textContent = "Play";
+      state.cursor = Math.max(0, Math.min(1, fraction));
+      range.value = String(Math.round(state.cursor * 1000));
+    },
+    play: function () {
+      state.live = false;
+      state.playing = true;
+      if (state.cursor > 0.98) state.cursor = 0.05;
+      play.textContent = "Pause";
+      play.setAttribute("aria-pressed", "true");
+    },
+    inflowPoint: inflowPoint,
+    headline: function () {
+      return (state.data && state.data.summary && state.data.summary.headline) || "";
+    }
+  };
 }
 
 function control(a, b, bend) {

@@ -29,7 +29,9 @@ def from_base_units(raw: object, decimals: int) -> Decimal:
 
 
 def format_amount(amount: Decimal) -> str:
+    """Human token amount. Thousands are grouped so 152156.87 renders as 152,156.87."""
     value = to_decimal(amount)
+    negative = value < 0
     absolute = abs(value)
     if absolute == 0:
         return "0"
@@ -41,10 +43,14 @@ def format_amount(amount: Decimal) -> str:
         quantum = Decimal("0.000001")
     else:
         quantum = Decimal("0.00000001")
-    text = format(value.quantize(quantum), "f")
+    text = format(absolute.quantize(quantum), "f")
     if "." in text:
         text = text.rstrip("0").rstrip(".")
-    return text or "0"
+    whole, dot, frac = text.partition(".")
+    grouped = f"{int(whole):,}"
+    if dot:
+        grouped = f"{grouped}.{frac}"
+    return f"-{grouped}" if negative else grouped
 
 
 def format_usd(value: float | None) -> str:

@@ -1,7 +1,7 @@
 (function () {
   var params = new URLSearchParams(window.location.search);
   var root = document.getElementById("app");
-  FlowlightEngine.mount(root, {
+  globalThis.__flowlight = FlowlightEngine.mount(root, {
     initialDemo: params.get("demo") === "1",
     initialLive: params.get("live") === "1",
     autoselect: params.get("select") || "",
