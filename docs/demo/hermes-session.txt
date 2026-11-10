@@ -1,0 +1,5 @@
+$ hermes flowlight watch purefile1686.near and 0xe7030be388b8e247abe0c9fa876673e83fbcbd3c on Base
+
+flowlight_watch
+Largest inflow 150,484.66 USDC ($150.4k) · 90 transfers in the scanned window.
+That inflow is the largest transfer into a watched address.

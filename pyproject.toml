@@ -1,0 +1,16 @@
+[project]
+name = "hermes-flowlight"
+version = "1.0.0"
+description = "Hermes Agent plugin that draws live on-chain money flows"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "ayinmodeolarewaju-bot" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

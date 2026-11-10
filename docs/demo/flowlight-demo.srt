@@ -1,0 +1,23 @@
+1
+00:00:01,000 --> 00:00:08,000
+ask hermes to watch purefile1686.near and a busy base wallet
+
+2
+00:00:08,000 --> 00:00:20,000
+flowlight_watch names the largest inflow, 150,484.66 usdc
+
+3
+00:00:20,000 --> 00:00:34,000
+live arcs. cyan is usdc. the green node is the quiet near account
+
+4
+00:00:34,000 --> 00:00:48,000
+scrub back, then play the window again
+
+5
+00:00:48,000 --> 00:01:06,000
+click the largest inflow. the panel matches, with an explorer link
+
+6
+00:01:06,000 --> 00:01:20,000
+flowlight. a hermes agent plugin. read-only.

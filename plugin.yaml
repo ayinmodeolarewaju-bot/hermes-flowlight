@@ -1,0 +1,48 @@
+name: flowlight
+label: Flowlight
+kind: standalone
+version: 1.0.0
+manifest_version: 2
+api_version: 1
+author: ayinmodeolarewaju-bot
+license: MIT
+homepage: https://github.com/ayinmodeolarewaju-bot/hermes-flowlight
+description: >
+  Watch public wallets and draw live on-chain money flows as glowing arcs.
+  Read-only. Uses public NEAR, Blockscout, and RPC endpoints. Never signs
+  or sends transactions and never handles keys.
+requires_hermes: ">=0.22.0"
+provides_tools:
+  - flowlight_watch
+  - flowlight_unwatch
+  - flowlight_flows
+  - flowlight_summary
+  - flowlight_list
+provides_hooks: []
+tags:
+  - onchain
+  - visualization
+  - near
+  - base
+  - wallets
+config_schema:
+  lookback_hours:
+    type: int
+    default: 24
+    label: Lookback (hours)
+    description: How far back Flowlight tries to read. Busy addresses may only cover the most recent slice of that window.
+  max_flows:
+    type: int
+    default: 180
+    label: Max flows
+    description: Cap on transfers returned to the picture and the summary.
+  cache_ttl_seconds:
+    type: int
+    default: 45
+    label: Cache TTL
+    description: How long a successful public-API read is reused.
+  demo_mode:
+    type: bool
+    default: false
+    label: Demo fixture mode
+    description: When true, every read uses the labeled offline fixture instead of live chain data.
