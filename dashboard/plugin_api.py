@@ -45,8 +45,8 @@ def health() -> dict:
 
 
 @router.get("/graph")
-def graph(demo: int = 0, live: int = 0, window_hours: int = 0) -> dict:
-    return _webapi().view_graph({"demo": demo, "live": live, "window_hours": window_hours})
+def graph(demo: int = 0, live: int = 0, window_hours: int = 0, phase: str = "") -> dict:
+    return _webapi().view_graph({"demo": demo, "live": live, "window_hours": window_hours, "phase": phase})
 
 
 @router.get("/summary")
@@ -62,6 +62,11 @@ def flows(demo: int = 0, live: int = 0, window_hours: int = 0, limit: int = 40) 
 @router.get("/watches")
 def watches() -> dict:
     return _webapi().view_watches()
+
+
+@router.get("/invoices")
+def invoices(demo: int = 0, live: int = 0, phase: str = "") -> dict:
+    return _webapi().view_invoices({"demo": demo, "live": live, "phase": phase})
 
 
 @router.post("/watch")

@@ -28,6 +28,7 @@ def deps(fetcher=None, **overrides):
         settings=overrides.get("settings") or Settings(demo_mode=False),
         now=overrides.get("now") or (lambda: 1_700_000_000),
         fetcher=fetcher,
+        ledger_path=overrides.get("ledger_path"),
     )
 
 
@@ -329,6 +330,185 @@ def test_solana_parsed_transfer():
     assert flows[0]["token"] == "SOL"
     assert flows[0]["amount"] == "2"
     assert flows[0]["usd"] == 200
+
+
+def _ledger(path: Path, invoices: list) -> Path:
+    path.write_text(json.dumps({"invoices": invoices, "pending": {}}), encoding="utf-8")
+    return path
+
+
+def _near_invoice(**overrides):
+    row = {
+        "id": "ip_abc123",
+        "number": "IP-20261110-ABCD",
+        "kind": "invoice",
+        "created_at": "2026-11-10T00:00:00Z",
+        "amount": "25",
+        "currency": "USDC",
+        "recipient": "purefile1686.near",
+        "memo": "design sprint",
+        "origin_chain": "arb",
+        "dry": True,
+        "deposit_address": None,
+        "payment_status": "DRY_QUOTE",
+        "funds_moved": False,
+    }
+    row.update(overrides)
+    return row
+
+
+class _StatusHttp:
+    def __init__(self, body):
+        self.body = body
+        self.urls = []
+
+    def get_json_once(self, url, timeout=4):
+        self.urls.append(url)
+        if isinstance(self.body, Exception):
+            raise self.body
+        return self.body
+
+
+def test_invoice_ledger_missing_malformed_pending_and_paid(tmp_path):
+    from flowlight_plugin import invoices as invoice_book
+
+    invoice_book.clear_status_cache()
+    missing = deps(ledger_path=tmp_path / "missing.json")
+    quiet = service.invoice_report({}, missing)
+    assert quiet["invoices"] == []
+    assert quiet["note"] == "no Intents Pay invoices found"
+    assert quiet["funds_moved"] is False
+    assert quiet["read_only"] is True
+    assert "Intents Pay" not in service.graph(missing)["summary"]["text"]
+
+    bad = tmp_path / "bad.json"
+    bad.write_text("{", encoding="utf-8")
+    broken = service.graph(deps(ledger_path=bad))
+    assert broken["invoices"] == []
+    assert broken["invoice_note"] == "no Intents Pay invoices found"
+    assert broken["ledger"] == "malformed"
+    assert any("could not be read" in item for item in broken["warnings"])
+    assert bad.read_text(encoding="utf-8") == "{"
+
+    deposit = "0x" + "ab" * 20
+    pending = _near_invoice()
+    paid = _near_invoice(
+        id="ip_paid",
+        number="IP-PAID",
+        amount="250",
+        payment_status="SUCCESS",
+        dry=False,
+        deposit_address=deposit,
+        memo="settled",
+    )
+    refunded = _near_invoice(
+        id="ip_refund",
+        number="IP-REFUND",
+        amount="10",
+        payment_status="REFUNDED",
+        dry=False,
+        deposit_address="0x" + "cd" * 20,
+    )
+    waiting = _near_invoice(id="ip_wait", number="IP-WAIT", amount="7", memo="still open")
+    path = _ledger(tmp_path / "ledger.json", [pending, paid, refunded, waiting, {"memo": "no recipient"}])
+    before = path.read_text(encoding="utf-8")
+
+    def fetcher(watches, _deps):
+        return ([{
+            "id": "near:in",
+            "chain": "near",
+            "token": "USDC",
+            "amount": "25",
+            "amount_value": 25,
+            "usd": 25,
+            "ts": 1_700_000_100,
+            "src": "intents.near",
+            "dst": "purefile1686.near",
+            "src_label": "NEAR Intents",
+            "dst_label": "purefile1686.near",
+            "explorer": "https://nearblocks.io/txns/example",
+        }, {
+            "id": "near:out",
+            "chain": "near",
+            "token": "USDC",
+            "amount": "10",
+            "amount_value": 10,
+            "usd": 10,
+            "ts": 1_700_000_200,
+            "src": "purefile1686.near",
+            "dst": "someone.near",
+            "explorer": "https://nearblocks.io/txns/out",
+        }], [])
+
+    box = deps(fetcher=fetcher, ledger_path=path)
+    picture = service.graph(box)
+    assert path.read_text(encoding="utf-8") == before
+    by_id = {item["id"]: item for item in picture["invoices"]}
+    assert by_id["ip_abc123"]["pending"] is False
+    assert by_id["ip_abc123"]["paid"] is True
+    assert by_id["ip_abc123"]["status_source"] == "on-chain"
+    assert by_id["ip_abc123"]["badge"] == "invoice IP-20261110-ABCD paid · 25 USDC"
+    assert by_id["ip_paid"]["paid"] is True
+    assert by_id["ip_paid"]["status_source"] == "ledger"
+    assert by_id["ip_refund"]["paid"] is False
+    assert by_id["ip_refund"]["pending"] is False
+    assert by_id["ip_wait"]["pending"] is True
+    assert by_id["ip_wait"]["paid"] is False
+    assert by_id["ip_wait"]["status"] == "DRY_QUOTE"
+    assert "signature" not in by_id["ip_paid"]
+    assert any(item["address"] == "purefile1686.near" for item in picture["watches"])
+    assert any(item["chain"] == "arbitrum" and item["address"] == deposit for item in picture["watches"])
+    assert any(arc["badge"].startswith("invoice IP-20261110-ABCD paid") for arc in picture["invoice_arcs"])
+    assert "Intents Pay:" in picture["summary"]["text"]
+    listed = json.loads(tools.flowlight_invoices({}, _deps=box))
+    assert listed["ok"] is True
+    assert listed["funds_moved"] is False
+    assert any(item["id"] == "ip_abc123" for item in listed["invoices"])
+
+
+def test_invoice_status_get_marks_paid_without_writing(tmp_path):
+    from flowlight_plugin import invoices as invoice_book
+
+    invoice_book.clear_status_cache()
+    deposit = "0x" + "11" * 20
+    path = _ledger(tmp_path / "ledger.json", [
+        _near_invoice(payment_status="PENDING_DEPOSIT", dry=False, deposit_address=deposit, amount="40"),
+    ])
+    http = _StatusHttp({"status": "SUCCESS", "updatedAt": "2026-11-10T01:02:03Z"})
+    box = deps(http=http, ledger_path=path, fetcher=lambda _watches, _deps: ([], []))
+    picture = service.graph(box)
+    invoice = picture["invoices"][0]
+    assert invoice["paid"] is True
+    assert invoice["status"] == "SUCCESS"
+    assert invoice["status_source"] == "1click"
+    assert invoice["updated_at"] == "2026-11-10T01:02:03Z"
+    assert http.urls and "depositAddress=" in http.urls[0]
+    assert "1click.chaindefuser.com/v0/status" in http.urls[0]
+    assert json.loads(path.read_text(encoding="utf-8"))["invoices"][0]["payment_status"] == "PENDING_DEPOSIT"
+
+
+def test_demo_invoices_are_labeled_and_phase_filters():
+    box = deps()
+    demo = service.graph(box, demo=True)
+    assert demo["ledger"] == "fixture"
+    assert any(item["fixture"] and item["pending"] and item["amount"] == "25" for item in demo["invoices"])
+    assert any(item["fixture"] and item["paid"] for item in demo["invoices"])
+    assert demo["invoice_arcs"][0]["fixture"] is True
+    assert "DEMO FIXTURE" in demo["summary"]["text"]
+    assert "Intents Pay:" in demo["summary"]["text"]
+    pending = service.graph(box, demo=True, phase="pending")
+    assert pending["invoice_arcs"] == []
+    assert all(item["pending"] for item in pending["invoices"])
+    paid = service.graph(box, demo=True, phase="paid")
+    assert paid["invoice_arcs"]
+    assert all(item["paid"] for item in paid["invoices"])
+    raw = json.loads(tools.flowlight_invoices({"demo": True}, _deps=box))
+    assert raw["demo"] is True
+    assert "DEMO FIXTURE" in raw["summary"]["text"]
+    action, args = cli.parse_slash("invoices")
+    assert action == "invoices"
+    assert args["demo"] is False
+    assert cli.parse_slash("invoices demo")[1]["demo"] is True
 
 
 def test_frontend_bundle_contains_engine_and_avoids_desktop_pitfalls():

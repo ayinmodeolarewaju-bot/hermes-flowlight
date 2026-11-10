@@ -9,6 +9,7 @@ from typing import Any
 
 from .chains import explorer_address, known_label, node_id, normalize_address
 from .demo_data import build_demo
+from . import invoices as invoice_book
 from .money import short_address
 from .narrate import summarize
 from .parse import InputError, coerce_watch_args, secret_material_error
@@ -194,17 +195,55 @@ def _public_flow(flow: dict[str, Any]) -> dict[str, Any]:
     return shown
 
 
-def graph(deps: Deps, *, demo: bool = False, live: bool = False, window_hours: int | None = None) -> dict[str, Any]:
+def _apply_phase(payload: dict[str, Any], phase: str | None) -> dict[str, Any]:
+    if phase not in {"pending", "paid"}:
+        return payload
+    rows = list(payload.get("invoices") or [])
+    if phase == "pending":
+        payload["invoices"] = [item for item in rows if item.get("pending")]
+        payload["invoice_arcs"] = []
+    else:
+        payload["invoices"] = [item for item in rows if item.get("paid")]
+    return payload
+
+
+def _mention(summary: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any]:
+    line = invoice_book.sentence(rows)
+    if not line:
+        return summary
+    updated = dict(summary)
+    updated["text"] = (str(summary.get("text") or "").rstrip() + " " + line).strip()
+    updated["invoice_pending"] = sum(1 for item in rows if item.get("pending"))
+    updated["invoice_paid"] = sum(1 for item in rows if item.get("paid"))
+    return updated
+
+
+def graph(
+    deps: Deps,
+    *,
+    demo: bool = False,
+    live: bool = False,
+    window_hours: int | None = None,
+    phase: str | None = None,
+) -> dict[str, Any]:
     use_demo = (deps.settings.demo_mode or demo) and not live
     if use_demo:
         payload = build_demo(_now(deps))
         payload["generated_at"] = int(_now(deps))
-        return payload
+        return _apply_phase(payload, phase)
+    prepared, note, ledger_state, extra_warnings = invoice_book.prepare(deps)
+    added = invoice_book.autowatch(deps, prepared)
     watches = deps.store.list_watches()
     if window_hours:
         deps.settings.lookback_hours = max(1, min(int(window_hours), 168))
     flows, warnings = collect(deps, watches)
-    summary = summarize(flows, watches, requested_hours=deps.settings.lookback_hours, warnings=warnings)
+    warnings = list(warnings) + extra_warnings
+    bound = invoice_book.match_flows(prepared, flows)
+    public = [invoice_book.public_invoice(item) for item in bound]
+    summary = _mention(
+        summarize(flows, watches, requested_hours=deps.settings.lookback_hours, warnings=warnings),
+        public,
+    )
     return _base(
         demo=False,
         mode="live",
@@ -214,6 +253,11 @@ def graph(deps: Deps, *, demo: bool = False, live: bool = False, window_hours: i
         flows=[_public_flow(flow) for flow in flows],
         nodes=_nodes(flows, watches),
         summary=summary,
+        invoices=public,
+        invoice_arcs=invoice_book.invoice_arcs(bound),
+        invoice_note=note if not public else "",
+        invoice_watches=added,
+        ledger=ledger_state,
     )
 
 
@@ -305,5 +349,27 @@ def summary_only(args: dict[str, Any], deps: Deps) -> dict[str, Any]:
         warnings=picture.get("warnings") or [],
         watches=picture.get("watches") or [],
         summary=picture.get("summary") or {"text": ""},
+        invoices=picture.get("invoices") or [],
         count=(picture.get("summary") or {}).get("count", 0),
+    )
+
+
+def invoice_report(args: dict[str, Any], deps: Deps) -> dict[str, Any]:
+    demo = bool((args or {}).get("demo"))
+    live = bool((args or {}).get("live"))
+    phase = str((args or {}).get("phase") or "") or None
+    picture = graph(deps, demo=demo, live=live, phase=phase if demo else None)
+    rows = picture.get("invoices") or []
+    note = picture.get("invoice_note") or ("" if rows else invoice_book.QUIET)
+    text = (picture.get("summary") or {}).get("text") if rows else note
+    return _base(
+        demo=picture.get("demo", False),
+        mode=picture.get("mode", "live"),
+        invoices=rows,
+        invoice_arcs=picture.get("invoice_arcs") or [],
+        note=note,
+        ledger=picture.get("ledger"),
+        warnings=picture.get("warnings") or [],
+        watches=picture.get("watches") or [],
+        summary={"text": text or note},
     )

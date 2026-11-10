@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from datetime import datetime, timezone
 from decimal import Decimal
+from typing import Any
 
 from .chains import explorer_address, explorer_tx, node_id
 from .money import format_amount
@@ -32,6 +32,95 @@ def demo_watches() -> list[dict[str, Any]]:
         {"chain": "near", "address": "purefile1686.near", "label": "purefile1686.near"},
         {"chain": "base", "address": "0x9c955c40dc98fce89a133f402ffbf94070e6e299", "label": "Busy Base"},
     ]
+
+
+def demo_invoices(now: float) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Labeled fixture invoices. They are not read from an Intents Pay ledger."""
+    created = datetime.fromtimestamp(now - 3600, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    settled = datetime.fromtimestamp(now - 180, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    recipient = "purefile1686.near"
+    recipient_id = node_id("near", recipient)
+    explorer = explorer_address("near", recipient)
+    pending = {
+        "id": "ip_demo_pending",
+        "number": "IP-DEMO-PEND",
+        "recipient": recipient,
+        "recipient_chain": "near",
+        "recipient_id": recipient_id,
+        "deposit_address": None,
+        "deposit_chain": None,
+        "deposit_id": "",
+        "amount": "25",
+        "token": "USDC",
+        "memo": "design sprint",
+        "status": "DRY_QUOTE",
+        "status_label": "Dry quote only. There is no deposit to track.",
+        "status_source": "fixture",
+        "paid": False,
+        "pending": True,
+        "created_at": created,
+        "updated_at": None,
+        "paid_at": None,
+        "deadline": None,
+        "dry": True,
+        "explorer": explorer,
+        "fixture": True,
+        "badge": "",
+        "matched_flow_id": None,
+    }
+    badge = "invoice IP-DEMO-PAID paid · 250 USDC"
+    paid = {
+        "id": "ip_demo_paid",
+        "number": "IP-DEMO-PAID",
+        "recipient": recipient,
+        "recipient_chain": "near",
+        "recipient_id": recipient_id,
+        "deposit_address": None,
+        "deposit_chain": None,
+        "deposit_id": "",
+        "amount": "250",
+        "token": "USDC",
+        "memo": "fixture settlement",
+        "status": "SUCCESS",
+        "status_label": "Payment settled",
+        "status_source": "fixture",
+        "paid": True,
+        "pending": False,
+        "created_at": created,
+        "updated_at": settled,
+        "paid_at": settled,
+        "deadline": None,
+        "dry": True,
+        "explorer": explorer,
+        "fixture": True,
+        "badge": badge,
+        "matched_flow_id": "demo:9",
+    }
+    arc = {
+        "id": "invoice:ip_demo_paid",
+        "invoice_id": "ip_demo_paid",
+        "number": "IP-DEMO-PAID",
+        "from_id": node_id("near", "intents-pay.near"),
+        "to_id": recipient_id,
+        "from_chain": "near",
+        "from_address": "intents-pay.near",
+        "from_label": "Intents Pay",
+        "to_chain": "near",
+        "to_address": recipient,
+        "to_label": recipient,
+        "token": "USDC",
+        "amount": "250",
+        "memo": "fixture settlement",
+        "status": "SUCCESS",
+        "status_label": "Payment settled",
+        "created_at": created,
+        "updated_at": settled,
+        "paid_at": settled,
+        "explorer": explorer,
+        "badge": badge,
+        "fixture": True,
+    }
+    return [pending, paid], [arc]
 
 
 def build_demo(now: float) -> dict[str, Any]:
@@ -87,14 +176,33 @@ def build_demo(now: float) -> dict[str, Any]:
                 "explorer": explorer_address(row["chain"], address),
             })
     flows.sort(key=lambda item: item["ts"], reverse=True)
+    nodes.setdefault(node_id("near", "intents-pay.near"), {
+        "id": node_id("near", "intents-pay.near"),
+        "chain": "near",
+        "address": "intents-pay.near",
+        "label": "Intents Pay",
+        "watched": False,
+        "kind": "account",
+        "explorer": explorer_address("near", "intents-pay.near"),
+    })
+    invoice_rows, arcs = demo_invoices(now)
     summary = summarize(
         flows,
         demo_watches(),
         requested_hours=24,
         warnings=["Showing the built-in demo fixture. These transfers were not read from a chain."],
     )
-    summary["text"] = "DEMO FIXTURE, not live chain data. " + summary["text"]
+    pending_n = sum(1 for item in invoice_rows if item["pending"])
+    paid_n = sum(1 for item in invoice_rows if item["paid"])
+    summary["text"] = (
+        "DEMO FIXTURE, not live chain data. "
+        + summary["text"]
+        + f" Intents Pay: {pending_n} pending (25 USDC to purefile1686.near, DRY_QUOTE); "
+        + f"{paid_n} paid (invoice IP-DEMO-PAID paid · 250 USDC)."
+    )
     summary["label"] = "DEMO FIXTURE"
+    summary["invoice_pending"] = pending_n
+    summary["invoice_paid"] = paid_n
     return {
         "ok": True,
         "demo": True,
@@ -107,4 +215,8 @@ def build_demo(now: float) -> dict[str, Any]:
         "flows": flows,
         "nodes": list(nodes.values()),
         "summary": summary,
+        "invoices": invoice_rows,
+        "invoice_arcs": arcs,
+        "invoice_note": "",
+        "ledger": "fixture",
     }

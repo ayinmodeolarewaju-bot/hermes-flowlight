@@ -31,7 +31,7 @@ var FLOWLIGHT_CSS = [
   ".fl-panel{position:absolute;top:128px;right:14px;width:min(300px,calc(100% - 28px));max-height:calc(100% - 180px);",
   "overflow:auto;z-index:3;padding:14px;border-radius:16px;background:rgba(10,10,18,.82);",
   "border:1px solid rgba(180,210,255,.18);box-shadow:0 18px 50px rgba(0,0,0,.35);backdrop-filter:blur(16px)}",
-  ".fl-panel h3{margin:0 0 6px;font-size:14px;font-weight:640}",
+  ".fl-panel h3{margin:0 64px 6px 0;font-size:14px;font-weight:640}",
   ".fl-panel p{margin:0 0 8px;font-size:12px;line-height:1.4;color:rgba(231,238,252,.78);overflow-wrap:anywhere}",
   ".fl-k{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(231,238,252,.46)}",
   ".fl-panel a{color:#9fd4ff}",
@@ -246,9 +246,11 @@ function mountFlowlight(root, options) {
   setWindow(21600);
 
   function query() {
-    if (state.force === "demo") return { demo: true };
-    if (state.force === "live") return { live: true };
-    return {};
+    var q = {};
+    if (state.force === "demo") q.demo = true;
+    else if (state.force === "live") q.live = true;
+    if (q.demo && options.invoicePhase) q.phase = options.invoicePhase;
+    return q;
   }
 
   function load() {
@@ -372,6 +374,23 @@ function mountFlowlight(root, options) {
         }
       });
     });
+    function remember(id, chain, address, label) {
+      if (!id || !address) return;
+      var prev = state.nodes[id] || {};
+      if (!next[id]) {
+        next[id] = Object.assign({
+          id: id, chain: chain, address: address, label: label || address,
+          watched: false, kind: "account", x: undefined, y: undefined, touch: {}
+        }, prev);
+      }
+    }
+    ((state.data && state.data.invoices) || []).forEach(function (inv) {
+      remember(inv.recipient_id, inv.recipient_chain, inv.recipient, inv.recipient);
+    });
+    ((state.data && state.data.invoice_arcs) || []).forEach(function (arc) {
+      remember(arc.from_id, arc.from_chain, arc.from_address, arc.from_label);
+      remember(arc.to_id, arc.to_chain, arc.to_address, arc.to_label);
+    });
     state.nodes = next;
   }
 
@@ -489,7 +508,16 @@ function mountFlowlight(root, options) {
       line.appendChild(document.createTextNode(token));
       legend.appendChild(line);
     });
-    var showEmpty = data && !(data.flows || []).length && !(data.demo);
+    if (((data && data.invoice_arcs) || []).length || ((data && data.invoices) || []).some(function (inv) { return inv.pending || inv.paid; })) {
+      var invoiceKey = flEl("div", "fl-key");
+      var invoiceDot = flEl("span", "fl-dot");
+      invoiceDot.style.background = "#ffd27a";
+      invoiceDot.style.color = "#ffd27a";
+      invoiceKey.appendChild(invoiceDot);
+      invoiceKey.appendChild(document.createTextNode("invoice"));
+      legend.appendChild(invoiceKey);
+    }
+    var showEmpty = data && !(data.flows || []).length && !((data && data.invoices) || []).length && !(data.demo);
     empty.textContent = "";
     if (!data || showEmpty) {
       var card = flEl("div", "fl-card");
@@ -520,15 +548,62 @@ function mountFlowlight(root, options) {
     renderPanel();
   }
 
+  function invoiceById(id) {
+    return ((state.data && state.data.invoices) || []).filter(function (item) { return item.id === id; })[0] || null;
+  }
+
+  function appendField(kicker, value) {
+    if (!value) return;
+    var row = flEl("p");
+    var label = flEl("span", "fl-k");
+    label.textContent = kicker;
+    row.appendChild(label);
+    row.appendChild(document.createTextNode(" " + value));
+    panel.appendChild(row);
+  }
+
+  function appendInvoice(inv) {
+    var title = flEl("h3");
+    title.textContent = inv.badge || ("Invoice " + (inv.number || inv.id));
+    panel.appendChild(title);
+    var status = inv.status_label || inv.status || "";
+    if (inv.status_source) status += " · " + inv.status_source;
+    appendField("Status", status);
+    appendField("Amount", ((inv.amount || "") + " " + (inv.token || "")).trim());
+    appendField("Memo", inv.memo || "");
+    appendField("Invoice", inv.number && inv.id && inv.number !== inv.id ? inv.number + " · " + inv.id : (inv.number || inv.id));
+    appendField("Created", inv.created_at || "");
+    appendField("Updated", inv.paid_at || inv.updated_at || "");
+    if (inv.explorer && String(inv.explorer).indexOf("demo-tx") === -1) {
+      var link = flEl("a");
+      link.href = inv.explorer;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Open in explorer";
+      panel.appendChild(link);
+    }
+    if (inv.fixture || (state.data && state.data.demo)) {
+      var note = flEl("p");
+      note.textContent = "DEMO FIXTURE: this invoice was not read from Intents Pay.";
+      panel.appendChild(note);
+    }
+  }
+
   function renderPanel() {
     var arcs = aggregate(visibleFlows());
     var arc = null;
     var node = null;
+    var invoiceArc = null;
+    if (state.selected && state.selected.type === "invoice") {
+      invoiceArc = ((state.data && state.data.invoice_arcs) || []).filter(function (item) {
+        return item.id === state.selected.id;
+      })[0] || null;
+    }
     if (state.selected && state.selected.type === "arc") {
       arc = arcs.filter(function (item) { return item.id === state.selected.id; })[0] || null;
     }
     if (state.selected && state.selected.type === "node") node = state.nodes[state.selected.id] || null;
-    if (!arc && !node) {
+    if (!arc && !node && !invoiceArc) {
       panel.hidden = true;
       return;
     }
@@ -539,6 +614,10 @@ function mountFlowlight(root, options) {
     close.textContent = "Close";
     close.addEventListener("click", function () { state.selected = null; panel.hidden = true; });
     panel.appendChild(close);
+    if (invoiceArc) {
+      appendInvoice(invoiceById(invoiceArc.invoice_id) || invoiceArc);
+      return;
+    }
     if (node) {
       var title = flEl("h3");
       title.textContent = node.label || node.address;
@@ -557,6 +636,9 @@ function mountFlowlight(root, options) {
         link.textContent = "Open address in explorer";
         panel.appendChild(link);
       }
+      ((state.data && state.data.invoices) || []).forEach(function (inv) {
+        if (inv.recipient_id === node.id) appendInvoice(inv);
+      });
       return;
     }
     var latest = arc.biggest || arc.latest || {};
@@ -623,6 +705,18 @@ function mountFlowlight(root, options) {
     var arcs = aggregate(visibleFlows());
     var best = null;
     var bestDist = 14;
+    ((state.data && state.data.invoice_arcs) || []).forEach(function (arc) {
+      var a = nodes[arc.from_id];
+      var b = nodes[arc.to_id];
+      if (!a || !b || a.x === undefined || b.x === undefined) return;
+      var bend = 78 + (flHash(arc.id) - 0.5) * 36;
+      var ctrl = control(a, b, bend);
+      for (var t = 0; t <= 1; t += 0.08) {
+        var p = quad(a, ctrl, b, t);
+        var dist = Math.hypot(point.x - p.x, point.y - p.y);
+        if (dist < bestDist) { bestDist = dist; best = { type: "invoice", id: arc.id, arc: arc }; }
+      }
+    });
     arcs.forEach(function (arc) {
       var a = nodes[arc.from];
       var b = nodes[arc.to];
@@ -654,6 +748,7 @@ function mountFlowlight(root, options) {
     tip.style.left = point.sx + "px";
     tip.style.top = point.sy + "px";
     if (found.type === "node") tip.textContent = (found.node.label || found.node.address) + " · " + found.node.chain;
+    else if (found.type === "invoice") tip.textContent = found.arc.badge || "invoice paid";
     else tip.textContent = found.arc.token + " · " + found.arc.count + " · " + (found.arc.usd ? "$" + Math.round(found.arc.usd).toLocaleString() : "");
   });
   canvas.addEventListener("mousedown", function (event) {
@@ -772,6 +867,39 @@ function mountFlowlight(root, options) {
       }
       g.globalAlpha = 1;
     });
+    var invoiceArcs = (state.data && state.data.invoice_arcs) || [];
+    var invoiceBadges = [];
+    invoiceArcs.forEach(function (arc) {
+      var a = state.nodes[arc.from_id];
+      var b = state.nodes[arc.to_id];
+      if (!a || !b || a.x === undefined || b.x === undefined) return;
+      var bend = 78 + (flHash(arc.id) - 0.5) * 36;
+      var ctrl = control(a, b, bend);
+      var selected = state.selected && state.selected.type === "invoice" && state.selected.id === arc.id;
+      g.save();
+      g.shadowColor = "#ffb020";
+      g.shadowBlur = selected ? 22 : 14;
+      g.strokeStyle = "#ffd27a";
+      g.globalAlpha = 0.35;
+      g.lineWidth = 11;
+      strokeCurve(g, a, ctrl, b);
+      g.globalAlpha = selected ? 1 : 0.92;
+      g.lineWidth = 3.4;
+      strokeCurve(g, a, ctrl, b);
+      g.shadowBlur = 0;
+      for (var spark = 0; spark < 6; spark++) {
+        var t = ((now * 0.00028) + spark / 6) % 1;
+        var p = quad(a, ctrl, b, t);
+        g.globalAlpha = 0.95;
+        g.fillStyle = "#fff6df";
+        g.beginPath();
+        g.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.restore();
+      var mid = quad(a, ctrl, b, 0.62);
+      invoiceBadges.push({ x: mid.x, y: mid.y - 16, text: arc.badge || "invoice paid" });
+    });
     Object.keys(state.nodes).forEach(function (id) {
       var node = state.nodes[id];
       var selected = state.selected && state.selected.type === "node" && state.selected.id === id;
@@ -818,6 +946,60 @@ function mountFlowlight(root, options) {
       g.fill();
       g.fillStyle = "rgba(236,242,255,0.94)";
       g.fillText(label, node.x, box.y + 12);
+      var pending = ((state.data && state.data.invoices) || []).filter(function (inv) {
+        return inv.pending && inv.recipient_id === id;
+      });
+      if (pending.length) {
+        var pulse = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(now / 280));
+        g.save();
+        g.setLineDash([5, 5]);
+        g.strokeStyle = "#ffd27a";
+        g.globalAlpha = pulse;
+        g.lineWidth = 1.7;
+        g.beginPath();
+        g.arc(node.x, node.y, radius + 14, 0, Math.PI * 2);
+        g.stroke();
+        g.restore();
+        var ringText = pending[0].amount + " " + pending[0].token;
+        if (pending.length > 1) ringText += " +" + (pending.length - 1);
+        g.font = "600 13px Outfit, ui-sans-serif, sans-serif";
+        g.textAlign = "center";
+        var rw = g.measureText(ringText).width;
+        g.fillStyle = "rgba(8,6,14,0.82)";
+        roundRect(g, node.x - rw / 2 - 7, node.y - radius - 32, rw + 14, 18, 8);
+        g.fill();
+        g.fillStyle = "#ffd27a";
+        g.fillText(ringText, node.x, node.y - radius - 19);
+      }
+      var paidHere = ((state.data && state.data.invoices) || []).some(function (inv) {
+        return inv.paid && inv.recipient_id === id;
+      });
+      if (paidHere) {
+        var spokes = 9;
+        for (var spoke = 0; spoke < spokes; spoke++) {
+          var ang = (spoke / spokes) * Math.PI * 2 + now / 680;
+          var travel = ((now / 860) + spoke * 0.08) % 1;
+          var dist = radius + 10 + travel * 34;
+          g.globalAlpha = 1 - travel;
+          g.fillStyle = "#ffd27a";
+          g.beginPath();
+          g.arc(node.x + Math.cos(ang) * dist, node.y + Math.sin(ang) * dist, 2.3, 0, Math.PI * 2);
+          g.fill();
+        }
+        g.globalAlpha = 1;
+      }
+    });
+    invoiceBadges.forEach(function (badge) {
+      g.font = "600 13px Outfit, ui-sans-serif, sans-serif";
+      g.textAlign = "center";
+      var text = badge.text;
+      if (g.measureText(text).width > 280) text = text.slice(0, 34) + "…";
+      var bw = g.measureText(text).width;
+      g.fillStyle = "rgba(12,8,4,0.86)";
+      roundRect(g, badge.x - bw / 2 - 8, badge.y - 13, bw + 16, 20, 8);
+      g.fill();
+      g.fillStyle = "#ffd27a";
+      g.fillText(text, badge.x, badge.y + 2);
     });
     g.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -888,6 +1070,29 @@ function mountFlowlight(root, options) {
     inflowPoint: inflowPoint,
     headline: function () {
       return (state.data && state.data.summary && state.data.summary.headline) || "";
+    },
+    focus: function (query, zoom) {
+      var needle = String(query || "").toLowerCase();
+      var node = null;
+      Object.keys(state.nodes).forEach(function (id) {
+        var item = state.nodes[id];
+        var blob = ((item.label || "") + " " + (item.address || "") + " " + id).toLowerCase();
+        if (!node && needle && blob.indexOf(needle) !== -1 && item.x !== undefined) node = item;
+      });
+      if (!node) return null;
+      var css = canvas._css || { w: canvas.clientWidth, h: canvas.clientHeight };
+      var k = zoom || 2.15;
+      state.cam.k = k;
+      state.cam.x = css.w * 0.46 - node.x * k;
+      state.cam.y = css.h * 0.5 - node.y * k;
+      return { id: node.id, label: node.label || node.address };
+    },
+    selectInvoice: function () {
+      var arc = ((state.data && state.data.invoice_arcs) || [])[0];
+      if (!arc) return false;
+      state.selected = { type: "invoice", id: arc.id };
+      renderPanel();
+      return true;
     }
   };
 }

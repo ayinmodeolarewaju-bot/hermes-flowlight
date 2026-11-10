@@ -27,6 +27,7 @@ class Deps:
     settings: Settings
     now: Any = None
     fetcher: Any = None
+    ledger_path: Path | None = None
 
 
 def _config_value(ctx: Any, key: str, default: Any) -> Any:

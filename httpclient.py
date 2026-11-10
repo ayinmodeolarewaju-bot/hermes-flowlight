@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Callable
 
-USER_AGENT = "Flowlight/1.0 (Hermes plugin; read-only)"
+USER_AGENT = "Flowlight/1.1 (Hermes plugin; read-only)"
 
 
 class HttpError(Exception):
@@ -156,6 +156,17 @@ class HttpClient:
 
     def get_json(self, url: str, **kwargs: Any) -> Any:
         return self.request_json("GET", url, **kwargs)
+
+    def get_json_once(self, url: str, *, timeout: float = 4) -> Any:
+        """Single GET with no retry and no host cooldown. Used for 1-Click status."""
+        headers = {"Accept": "application/json", "User-Agent": USER_AGENT}
+        status, payload = self._transport("GET", url, None, headers, timeout)
+        if status != 200:
+            raise HttpError(f"HTTP {status}", status=status)
+        try:
+            return json.loads(payload.decode("utf-8") or "null")
+        except json.JSONDecodeError as exc:
+            raise HttpError("response was not JSON") from exc
 
     def post_json(self, url: str, body: Any, **kwargs: Any) -> Any:
         return self.request_json("POST", url, body=body, **kwargs)
