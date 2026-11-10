@@ -1,0 +1,14 @@
+{
+  "name": "flowlight",
+  "label": "Flowlight",
+  "description": "Live on-chain money flows as glowing arcs.",
+  "icon": "Sparkles",
+  "version": "1.0.0",
+  "tab": {
+    "path": "/flowlight",
+    "position": "end"
+  },
+  "entry": "dist/index.js",
+  "css": "dist/style.css",
+  "api": "plugin_api.py"
+}

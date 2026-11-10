@@ -1,0 +1,12 @@
+html, body, #app {
+  margin: 0;
+  height: 100%;
+  background: #07060e;
+  color: #e7eefc;
+}
+body {
+  font-family: Outfit, ui-sans-serif, "Segoe UI", sans-serif;
+  --fl-ui: Outfit, ui-sans-serif, "Segoe UI", sans-serif;
+  --fl-display: Syne, Outfit, sans-serif;
+}
+#app { min-height: 100%; }
