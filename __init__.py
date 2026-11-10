@@ -33,7 +33,7 @@ def register(ctx) -> None:
         "flowlight",
         slash_command,
         description="Watch public wallets and narrate on-chain flows (read-only)",
-        args_hint="[watch|flows|summary|list|demo] ...",
+        args_hint="[watch|flows|summary|list|invoices|demo] ...",
     )
     ctx.register_cli_command(
         name="flowlight",

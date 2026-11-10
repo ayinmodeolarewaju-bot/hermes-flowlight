@@ -11,3 +11,17 @@ Live data only. No demo fixture in this cut. No seed phrase, no wallet popup, no
 | 66–76s | Title | Flowlight. A Hermes Agent plugin. Read-only. `github.com/ayinmodeolarewaju-bot/hermes-flowlight`. |
 
 This machine has no model provider connected, so the terminal shot is `hermes flowlight`, which runs the same tool handlers and the same headline the pane prints. It is not a fabricated model transcript.
+
+## Demo v3 (47.5 seconds)
+
+Caption file: `docs/demo/flowlight-demo-v3.mp4`. Raw: `docs/demo/flowlight-demo-v3-raw.mp4`. The pending ring is the live dry invoice `IP-20261110-82B7` (25 USDC to purefile1686.near, no deposit). The gold burst is the labeled demo fixture.
+
+| Time | Shot | What the viewer should see |
+| --- | --- | --- |
+| 0.0–3.0 | Hook | Live arcs already filling the frame. Title: watch money move. |
+| 3.0–11.0 | Terminal | Large `hermes flowlight invoices`. 25 USDC, pending, dry quote. |
+| 11.0–18.5 | Hub | Ken Burns into the live Base hub. |
+| 18.5–26.5 | Pending | Dashed ring on purefile1686.near, labeled 25 USDC. Caption: invoice with intents pay. |
+| 26.5–34.5 | Paid | DEMO FIXTURE badge stays visible. Gold arc and the badge invoice IP-DEMO-PAID paid · 250 USDC. |
+| 34.5–40.5 | Detail | The fixture invoice panel: id, memo, amount, status, timestamps, explorer, and the fixture line. |
+| 40.5–47.5 | Title | Flowlight. a Hermes Agent plugin · read-only. The GitHub URL. No caption. |

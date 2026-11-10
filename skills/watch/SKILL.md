@@ -1,6 +1,6 @@
 ---
 name: watch
-description: Watch public wallet addresses and narrate on-chain money flows with Flowlight. Use when the user wants to watch a NEAR or EVM address, see recent transfers, or summarize inflows and outflows.
+description: Watch public wallet addresses and narrate on-chain money flows with Flowlight. Use when the user wants to watch a NEAR or EVM address, see recent transfers, summarize inflows and outflows, or check Intents Pay invoices.
 ---
 
 # Flowlight
@@ -14,6 +14,7 @@ Use the Flowlight tools for on-chain watches. Numbers, addresses, and explorer l
 3. `flowlight_summary` when they ask for the largest inflow or outflow.
 4. `flowlight_flows` when they want individual transfers.
 5. `flowlight_list` and `flowlight_unwatch` to show or drop watches.
+6. `flowlight_invoices` when they ask about an Intents Pay invoice. If the note says no Intents Pay invoices were found, say that and do not invent one. A `fixture: true` invoice is the demo fixture, not a live invoice.
 
 `/flowlight` is the same read path. `hermes flowlight serve` opens the animated picture on loopback.
 

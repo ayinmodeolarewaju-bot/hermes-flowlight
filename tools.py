@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from .runtime import make_deps
-from .service import flow_list, list_accounts, summary_only, unwatch_accounts, watch_accounts
+from .service import flow_list, invoice_report, list_accounts, summary_only, unwatch_accounts, watch_accounts
 
 _BOUND_CTX: Any = None
 
@@ -62,10 +62,18 @@ def flowlight_list(args: dict[str, Any], **kwargs: Any) -> str:
         return _dump({"ok": False, "error": f"flowlight_list failed: {exc}", "funds_moved": False, "read_only": True})
 
 
+def flowlight_invoices(args: dict[str, Any], **kwargs: Any) -> str:
+    try:
+        return _dump(invoice_report(args or {}, _deps(kwargs)))
+    except Exception as exc:  # noqa: BLE001
+        return _dump({"ok": False, "error": f"flowlight_invoices failed: {exc}", "funds_moved": False, "read_only": True})
+
+
 HANDLERS = {
     "flowlight_watch": flowlight_watch,
     "flowlight_unwatch": flowlight_unwatch,
     "flowlight_flows": flowlight_flows,
     "flowlight_summary": flowlight_summary,
     "flowlight_list": flowlight_list,
+    "flowlight_invoices": flowlight_invoices,
 }

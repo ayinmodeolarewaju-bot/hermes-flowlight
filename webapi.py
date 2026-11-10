@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .runtime import Deps, make_deps
-from .service import flow_list, list_accounts, summary_only, unwatch_accounts, watch_accounts, graph
+from .service import flow_list, invoice_report, list_accounts, summary_only, unwatch_accounts, watch_accounts, graph
 
 _SHARED: Deps | None = None
 
@@ -33,11 +33,13 @@ def view_graph(query: dict[str, Any] | None = None, deps: Deps | None = None) ->
         hours = int(window)
     except (TypeError, ValueError):
         hours = 0
+    demo = _flag(query.get("demo"))
     return graph(
         deps or shared_deps(),
-        demo=_flag(query.get("demo")),
+        demo=demo,
         live=_flag(query.get("live")),
         window_hours=hours or None,
+        phase=str(query.get("phase") or "") or None if demo else None,
     )
 
 
@@ -70,6 +72,14 @@ def view_flows(query: dict[str, Any] | None = None, deps: Deps | None = None) ->
 
 def view_watches(deps: Deps | None = None) -> dict[str, Any]:
     return list_accounts(deps or shared_deps())
+
+
+def view_invoices(query: dict[str, Any] | None = None, deps: Deps | None = None) -> dict[str, Any]:
+    query = query or {}
+    return invoice_report(
+        {"demo": _flag(query.get("demo")), "live": _flag(query.get("live")), "phase": query.get("phase") or ""},
+        deps or shared_deps(),
+    )
 
 
 def post_watch(body: dict[str, Any], deps: Deps | None = None) -> dict[str, Any]:

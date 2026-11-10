@@ -18,6 +18,7 @@
           var search = new URLSearchParams();
           if (query && query.demo) search.set("demo", "1");
           if (query && query.live) search.set("live", "1");
+          if (query && query.phase) search.set("phase", query.phase);
           return fetch("/api/plugins/flowlight/graph?" + search.toString(), {
             credentials: "same-origin",
             headers: { Accept: "application/json" }

@@ -84,6 +84,9 @@ def _handler_factory():
             if path == "/api/watches":
                 self._json(200, webapi.view_watches())
                 return
+            if path == "/api/invoices":
+                self._json(200, webapi.view_invoices(self._query()))
+                return
             if path == "/api/health":
                 self._json(200, {"ok": True, "plugin": "flowlight", "read_only": True, "funds_moved": False})
                 return

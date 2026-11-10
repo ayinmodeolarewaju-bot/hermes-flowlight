@@ -7,7 +7,7 @@ import json
 from typing import Any
 
 from .runtime import make_deps
-from .service import flow_list, list_accounts, summary_only, unwatch_accounts, watch_accounts
+from .service import flow_list, invoice_report, list_accounts, summary_only, unwatch_accounts, watch_accounts
 
 
 def parse_slash(raw: str) -> tuple[str, dict[str, Any]] | tuple[None, str]:
@@ -34,6 +34,8 @@ def parse_slash(raw: str) -> tuple[str, dict[str, Any]] | tuple[None, str]:
         return "unwatch", {"text": " ".join(rest)}
     if action == "serve":
         return "serve", {"port": int(rest[0]) if rest else 8787}
+    if action in {"invoices", "invoice"}:
+        return "invoices", {"demo": any(part in {"--demo", "demo"} for part in rest)}
     return None, _usage()
 
 
@@ -45,6 +47,7 @@ def _usage() -> str:
         "/flowlight flows\n"
         "/flowlight summary\n"
         "/flowlight list\n"
+        "/flowlight invoices\n"
         "/flowlight demo\n"
         "Read-only. Flowlight never asks for a key and never sends a transaction.\n"
         "The picture is `hermes flowlight serve` on a loopback page."
@@ -69,6 +72,8 @@ def slash_command(raw_args: str, **kwargs: Any) -> str:
         result = summary_only(args, deps)
     elif action == "summary":
         result = summary_only(args, deps)
+    elif action == "invoices":
+        result = invoice_report(args, deps)
     else:
         result = list_accounts(deps)
     summary = (result.get("summary") or {}).get("text")
@@ -97,6 +102,9 @@ def setup_cli(subparser: argparse.ArgumentParser) -> None:
     summary.add_argument("--window-hours", type=int, default=None)
     summary.add_argument("--demo", action="store_true")
     summary.add_argument("--json", action="store_true")
+    invoices = commands.add_parser("invoices", help="List Intents Pay invoices Flowlight can see")
+    invoices.add_argument("--demo", action="store_true", help="Use the labeled fixture instead of the ledger")
+    invoices.add_argument("--json", action="store_true")
     commands.add_parser("demo", help="Print the labeled offline fixture summary")
     serve = commands.add_parser("serve", help="Open the flow picture on loopback")
     serve.add_argument("--port", type=int, default=8787)
@@ -144,6 +152,10 @@ def handle_cli(args: argparse.Namespace) -> None:
         return
     if action == "summary":
         result = summary_only({"window_hours": args.window_hours, "demo": args.demo}, deps)
+        _print_result(result, args.json)
+        return
+    if action == "invoices":
+        result = invoice_report({"demo": args.demo}, deps)
         _print_result(result, args.json)
         return
     if action == "demo":

@@ -115,10 +115,39 @@ FLOWLIGHT_LIST = {
     },
 }
 
+FLOWLIGHT_INVOICES = {
+    "name": "flowlight_invoices",
+    "description": (
+        "List Intents Pay invoices Flowlight can see, with a live read-only status. "
+        "Flowlight reads the Intents Pay JSON ledger if that plugin is installed and may GET "
+        "1-Click /v0/status for a deposit address. It also treats a matching on-chain inflow "
+        "to the recipient as paid. It does not create a quote or a deposit. "
+        "If Intents Pay is not installed, the result says no Intents Pay invoices found. "
+        "Pass demo=true only for the labeled fixture, which includes a pending ring and a paid burst. "
+        + _SAFETY
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "demo": {
+                "type": "boolean",
+                "description": "Return the labeled demo fixture invoices instead of the ledger.",
+            },
+            "live": {
+                "type": "boolean",
+                "description": "Force a live ledger read even if demo mode is configured.",
+            },
+        },
+        "required": [],
+        "additionalProperties": False,
+    },
+}
+
 TOOL_SCHEMAS = {
     "flowlight_watch": FLOWLIGHT_WATCH,
     "flowlight_unwatch": FLOWLIGHT_UNWATCH,
     "flowlight_flows": FLOWLIGHT_FLOWS,
     "flowlight_summary": FLOWLIGHT_SUMMARY,
     "flowlight_list": FLOWLIGHT_LIST,
+    "flowlight_invoices": FLOWLIGHT_INVOICES,
 }

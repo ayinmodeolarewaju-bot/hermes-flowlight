@@ -7,7 +7,8 @@ import { PALETTE_AREA, ROUTES_AREA, SIDEBAR_NAV_AREA, STATUSBAR_AREAS, host } fr
 function flowQuery(extra) {
   var demo = extra && extra.demo ? "1" : "0";
   var live = extra && extra.live ? "1" : "0";
-  return "/graph?demo=" + demo + "&live=" + live;
+  var phase = extra && extra.phase ? "&phase=" + encodeURIComponent(extra.phase) : "";
+  return "/graph?demo=" + demo + "&live=" + live + phase;
 }
 
 function FlowStage(props) {
