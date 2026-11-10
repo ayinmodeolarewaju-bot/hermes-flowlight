@@ -14,12 +14,12 @@ Prepared for the Hermes Agent Plugin Hackathon. This file is the catalog change.
 
 Pin this commit. It is the plugin tree (code, tests, README, screenshots, dashboard bundle). A later commit on this branch only records the hash in this file.
 
-`cb4e5922f29b755776beccb62147d166ea362b3f`
+`ec35217e7e8aab684cb2d6140d5eca1e3f570c7b`
 
 ```yaml
 name: flowlight
 repo: https://github.com/ayinmodeolarewaju-bot/hermes-flowlight
-sha: cb4e5922f29b755776beccb62147d166ea362b3f
+sha: ec35217e7e8aab684cb2d6140d5eca1e3f570c7b
 description: >
   Watch public wallets and draw live on-chain money flows as glowing arcs.
   Read-only. Uses public NEAR, Blockscout, and RPC endpoints. Never signs
@@ -31,11 +31,11 @@ requires_hermes: ">=0.22.0"
 version: "1.0.0"
 title: Flowlight
 docs_url: https://github.com/ayinmodeolarewaju-bot/hermes-flowlight
-image: https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/cb4e5922f29b755776beccb62147d166ea362b3f/docs/screenshots/banner.png
+image: https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/ec35217e7e8aab684cb2d6140d5eca1e3f570c7b/docs/screenshots/banner.png
 screenshots:
-  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/cb4e5922f29b755776beccb62147d166ea362b3f/docs/screenshots/live-flows.png
-  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/cb4e5922f29b755776beccb62147d166ea362b3f/docs/screenshots/arc-detail.png
-  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/cb4e5922f29b755776beccb62147d166ea362b3f/docs/screenshots/demo-fixture.png
+  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/ec35217e7e8aab684cb2d6140d5eca1e3f570c7b/docs/screenshots/live-flows.png
+  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/ec35217e7e8aab684cb2d6140d5eca1e3f570c7b/docs/screenshots/arc-detail.png
+  - https://raw.githubusercontent.com/ayinmodeolarewaju-bot/hermes-flowlight/ec35217e7e8aab684cb2d6140d5eca1e3f570c7b/docs/screenshots/demo-fixture.png
 readme: true
 platforms: []
 known_issues:
